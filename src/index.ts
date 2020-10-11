@@ -127,4 +127,4 @@ app.get('/posts/:cursor', (req: express.Request<{ cursor: number }>, res: expres
   }
 });
 
-exports.getPosts = functions.https.onRequest(app);
+exports.posts = functions.https.onRequest(app);
