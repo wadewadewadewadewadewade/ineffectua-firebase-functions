@@ -78,12 +78,16 @@ const getPosts = (user: admin.auth.DecodedIdToken, cursor: number = 0): Promise<
     getPostsByPublic(db, cursor)
   ]).then((postsCollection: Array<Array<Post>>) => {
     const posts = new Array<Post>()
+    const keysAdded: { [key: string]: boolean } = {}
     postsCollection.forEach((ps: Array<Post>) => {
       ps.forEach((p: Post) => {
-        posts.push(p)
+        if (p.key && !keysAdded[p.key]) {
+          keysAdded[p.key] = true // remove duplicates
+          posts.push(p)
+        }
       })
     })
-    return posts.sort((a,b) => a.created.on.getTime() - b.created.on.getTime())
+    return posts.sort((a,b) => b.created.on.getTime() - a.created.on.getTime())
   })
 }
 
@@ -92,7 +96,7 @@ const app: express.Express = express()
 app.use(require('cors')({origin: true}));
 
 async function getFirebaseUser(req: express.Request, res: express.Response, next: express.NextFunction) {
-  console.log('Check if request is authorized with Firebase ID token');
+  //console.log('Check if request is authorized with Firebase ID token');
 
   if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
     console.error(
@@ -105,13 +109,13 @@ async function getFirebaseUser(req: express.Request, res: express.Response, next
 
   let idToken = '';
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-    console.log('Found \'Authorization\' header');
+    //console.log('Found \'Authorization\' header');
     idToken = req.headers.authorization.split('Bearer ')[1];
   }
 
   try {
     const decodedIdToken = await admin.auth().verifyIdToken(idToken);
-    console.log('ID Token correctly decoded', decodedIdToken);
+    //console.log('ID Token correctly decoded', decodedIdToken);
     req.user = decodedIdToken;
     return next();
   } catch(error) {
@@ -120,10 +124,10 @@ async function getFirebaseUser(req: express.Request, res: express.Response, next
   }
 }
 app.use(getFirebaseUser);
-app.get('/posts/:cursor', (req: express.Request<{ cursor: number }>, res: express.Response) => {
+app.get('/:cursor', (req: express.Request<{ cursor: number }>, res: express.Response) => {
 
   if (req.user) {
-    res.json(getPosts(req.user, req.params.cursor));
+    getPosts(req.user, req.params.cursor).then(posts => res.json(posts)).catch(err => console.error(err));
   }
 });
 
