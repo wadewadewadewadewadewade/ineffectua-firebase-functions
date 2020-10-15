@@ -7,20 +7,23 @@ import * as express from 'express';
 
 admin.initializeApp(functions.config().firebase);
 
-enum PostPrivacyTypes {
+export enum PostPrivacyTypes {
   'PUBLIC' = 0,
   'PRIVATE' = 1,
   'FRIENDS' = 2,
+  'PUBLICANDFRIENDS' = 3,
 }
 
-type PostCriteria = {
-  tagId?: string,
-  recipientId?: string
-  privacy: PostPrivacyTypes
-}
+export type PostCriteria = {
+  key?: {
+    id: string;
+    type: 'posts' | 'comments' | 'messages';
+  };
+  privacy: PostPrivacyTypes;
+};
 
 type Post = {
-  key?: string,
+  key: string,
   body: string,
   tags: Array<string>,
   criteria: PostCriteria,
@@ -71,29 +74,78 @@ const getPostsByPublic = (db: FirebaseFirestore.Firestore, cursor: number = 0) =
 }
 
 // https://fireship.io/snippets/express-middleware-auth-token-firebase/
-const getPosts = (user: admin.auth.DecodedIdToken, cursor: number = 0): Promise<Array<Post>> => {
+const getPosts = (user: admin.auth.DecodedIdToken, cursorOrString: number | string = 0): Promise<Array<Post>> => {
+  const db = admin.firestore();
+  if (typeof cursorOrString === 'string') {
+    return db.collection('posts')
+    .where(FirebaseFirestore.FieldPath.documentId(), '==', cursorOrString)
+    .get()
+    .then((querySnapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>) =>
+      querySnapshot.docs.map(p => convertDocumentDataToPost(p))
+    )
+  } else {
+    return Promise.all<Array<Post>>([
+      getPostsByUser(db, user, cursorOrString),
+      getPostsByPublic(db, cursorOrString)
+    ]).then((postsCollection: Array<Array<Post>>) => {
+      const postArray = new Array<Post>()
+      const keysAdded: { [key: string]: boolean } = {}
+      postsCollection.forEach((ps: Array<Post>) => {
+        ps.forEach((p: Post) => {
+          if (p.key && !keysAdded[p.key]) {
+            keysAdded[p.key] = true // remove duplicates
+            postArray.push(p)
+          }
+        })
+      })
+      return postArray.sort((a,b) => b.created.on.getTime() - a.created.on.getTime())
+    })
+  }
+}
+
+const getCommentsByUser = (db: FirebaseFirestore.Firestore, user: admin.auth.DecodedIdToken, key: string, cursor: number = 0) => {
+  return db.collection('comments')
+  .where('criteria.key.id', '==', key)
+  .where('created.by', '==', user.uid)
+  .offset(postsPageSize * cursor)
+  .limit(postsPageSize * (cursor + 1))
+  .get()
+  .then((querySnapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>) =>
+    querySnapshot.docs.map(p => convertDocumentDataToPost(p))
+  )
+}
+
+const getCommentsByPublic = (db: FirebaseFirestore.Firestore, key: string, cursor: number = 0) => {
+  return db.collection('comments')
+  .where('criteria.key.id', '==', key)
+  .where('criteria.privacy', '==', PostPrivacyTypes.PUBLIC)
+  .offset(postsPageSize * cursor)
+  .limit(postsPageSize * (cursor + 1))
+  .get()
+  .then((querySnapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>) =>
+    querySnapshot.docs.map(p => convertDocumentDataToPost(p))
+  )
+}
+
+const getComments = (user: admin.auth.DecodedIdToken, key: string, cursor: number = 0): Promise<Array<Post>> => {
   const db = admin.firestore();
   return Promise.all<Array<Post>>([
-    getPostsByUser(db, user, cursor),
-    getPostsByPublic(db, cursor)
+    getCommentsByUser(db, user, key, cursor),
+    getCommentsByPublic(db, key, cursor)
   ]).then((postsCollection: Array<Array<Post>>) => {
-    const posts = new Array<Post>()
+    const commentsArray = new Array<Post>()
     const keysAdded: { [key: string]: boolean } = {}
-    postsCollection.forEach((ps: Array<Post>) => {
-      ps.forEach((p: Post) => {
+    postsCollection.forEach((cs: Array<Post>) => {
+      cs.forEach((p: Post) => {
         if (p.key && !keysAdded[p.key]) {
           keysAdded[p.key] = true // remove duplicates
-          posts.push(p)
+          commentsArray.push(p)
         }
       })
     })
-    return posts.sort((a,b) => b.created.on.getTime() - a.created.on.getTime())
+    return commentsArray.sort((a,b) => b.created.on.getTime() - a.created.on.getTime())
   })
 }
-
-const app: express.Express = express()
-
-app.use(require('cors')({origin: true}));
 
 async function getFirebaseUser(req: express.Request, res: express.Response, next: express.NextFunction) {
   //console.log('Check if request is authorized with Firebase ID token');
@@ -123,12 +175,23 @@ async function getFirebaseUser(req: express.Request, res: express.Response, next
     return res.status(403).send('Unauthorized');
   }
 }
-app.use(getFirebaseUser);
-app.get('/:cursor', (req: express.Request<{ cursor: number }>, res: express.Response) => {
 
+const posts: express.Express = express()
+posts.use(require('cors')({origin: true}));
+posts.use(getFirebaseUser);
+posts.get('/:cursorOrKey', (req: express.Request<{ cursorOrKey: number | string }>, res: express.Response) => {
   if (req.user) {
-    getPosts(req.user, req.params.cursor).then(posts => res.json(posts)).catch(err => console.error(err));
+    getPosts(req.user, req.params.cursorOrKey).then(p => res.json(p)).catch(err => console.error(err));
   }
 });
+exports.posts = functions.https.onRequest(posts);
 
-exports.posts = functions.https.onRequest(app);
+const comments: express.Express = express()
+comments.use(require('cors')({origin: true}));
+comments.use(getFirebaseUser);
+comments.get('/:key/:cursor', (req: express.Request<{ key: string, cursor: number }>, res: express.Response) => {
+  if (req.user) {
+    getComments(req.user, req.params.key, req.params.cursor).then(c => res.json(c)).catch(err => console.error(err));
+  }
+});
+exports.comments = functions.https.onRequest(comments);
