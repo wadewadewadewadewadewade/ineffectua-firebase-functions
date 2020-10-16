@@ -14,7 +14,7 @@ export const getTagsForAutocomplete = (
     } else if (tagIdsInUse.length > 0) {
       db.collection('tags')
         .where('name', '>=', prefix)
-        .where(FirebaseFirestore.FieldPath.documentId(), 'not-in', tagIdsInUse)
+        .where(admin.firestore.FieldPath.documentId(), 'not-in', tagIdsInUse)
         .limit(limit)
         .get()
         .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {
@@ -54,7 +54,7 @@ export const getTagsByKeyArray = (
       }, 1000);
     } else {
       db.collection('tags')
-        .where(FirebaseFirestore.FieldPath.documentId(), 'in', tagIds)
+        .where(admin.firestore.FieldPath.documentId(), 'in', tagIds)
         .get()
         .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {
           const arr = querySnapshot.docs.map((d) => {
