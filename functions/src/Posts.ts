@@ -30,7 +30,6 @@ const getPostsByPublic = (db: FirebaseFirestore.Firestore, collection: string, c
   )
 }
 
-// https://fireship.io/snippets/express-middleware-auth-token-firebase/
 export const getPosts = (
   user: admin.auth.DecodedIdToken,
   collection: string,
@@ -95,6 +94,7 @@ export const addPost = (
         }
         const {key, created, ...rest} = post;
         const newPost = {...rest, created: newCreated};
+        console.log('adding ' + collection, JSON.stringify(newPost))
         db.collection(collection)
           .add(newPost)
           .then(
@@ -104,6 +104,7 @@ export const addPost = (
               >
             ) => {
               const data: Post = {...newPost, key: value.id};
+              console.log('new post', JSON.stringify(data))
               resolve(data);
             }
           ).catch(e => reject(e))
