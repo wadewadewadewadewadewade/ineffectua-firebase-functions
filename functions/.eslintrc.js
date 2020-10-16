@@ -66,5 +66,10 @@ module.exports = {
         returns: "return",
       },
     },
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".ts"]
+      }
+    }
   },
 };
