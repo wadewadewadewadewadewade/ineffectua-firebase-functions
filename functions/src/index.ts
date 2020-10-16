@@ -6,7 +6,6 @@ import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as bodyParser from "body-parser";
 import { getPosts, addPost } from './Posts';
-import { getComments } from './Comments';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -39,37 +38,54 @@ async function getFirebaseUser(req: express.Request, res: express.Response, next
   }
 }
 
-const posts: express.Express = express()
-posts.use(require('cors')({origin: true}));
-posts.use(getFirebaseUser);
-posts.use(bodyParser.json());
-posts.use(bodyParser.urlencoded({ extended: false }));
-posts.put('/', (req: express.Request, res: express.Response) => {
-  if (req.user) {
-    addPost(req.user, req.body, req.headers['x-appengine-user-ip'] as string || req.header('x-forwarded-for') || req.connection.remoteAddress).then(p => res.json(p)).catch(err => console.error(err));
-  }
-})
-posts.get('/:key/:cursor', (req: express.Request<{ key: string, cursor: string }>, res: express.Response) => {
-  const {key, cursor} = req.params
-  if (req.user) {
-    getPosts(req.user, parseInt(cursor, 10), key).then(p => res.json(p)).catch(err => console.error(err));
-  }
-});
-posts.get('/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
-  if (req.user) {
-    getPosts(req.user, parseInt(req.params.cursor, 10)).then(p => res.json(p)).catch(err => console.error(err));
-  }
-});
-exports.posts = functions.https.onRequest(posts);
+const app: express.Express = express();
+const main: express.Express = express();
+main.use('/v1', app);
+main.use(require('cors')({origin: true}));
+main.use(getFirebaseUser);
+main.use(bodyParser.json());
+main.use(bodyParser.urlencoded({ extended: false }));
 
-const comments: express.Express = express()
-comments.use(require('cors')({origin: true}));
-comments.use(getFirebaseUser);
-comments.use(bodyParser.json());
-comments.use(bodyParser.urlencoded({ extended: false }));
-comments.get('/:key/:cursor', (req: express.Request<{ key: string, cursor: string }>, res: express.Response) => {
-  if (req.user) {
-    getComments(req.user, req.params.key, parseInt(req.params.cursor, 10)).then(c => res.json(c)).catch(err => console.error(err));
+export const api = functions.https.onRequest(main);
+
+app.put('/:collection((posts|comments|messages))', (req: express.Request<{ collection: string }>, res: express.Response) => {
+  if (!req.user) {
+    res.status(401).send('Not authenticated');
+  } else {
+    const IP = req.headers['x-appengine-user-ip'] as string || req.header('x-forwarded-for') || req.connection.remoteAddress;
+    addPost(req.user, req.params.collection, req.body, IP)
+    .then(p => res.status(201).send(p.key))
+    .catch(err => {
+      console.error(err);
+      res.status(500).send(err);
+    });
   }
 });
-exports.comments = functions.https.onRequest(comments);
+
+app.get('/:collection((posts|comments|messages))/:key/:cursor', (req: express.Request<{ collection: string, key: string, cursor: string }>, res: express.Response) => {
+  if (!req.user) {
+    res.status(401).send('Not authenticated');
+  } else {
+    const {collection, key, cursor} = req.params;
+    getPosts(req.user, collection, parseInt(cursor, 10), key)
+    .then(p => res.status(200).json(p))
+    .catch(err => {
+      console.error(err);
+      res.status(500).send(err);
+    });
+  }
+});
+
+app.get('/:collection((posts|comments|messages))/:cursor', (req: express.Request<{ collection: string, cursor: string }>, res: express.Response) => {
+  if (!req.user) {
+    res.status(401).send('Not authenticated');
+  } else {
+    const {collection, cursor} = req.params;
+    getPosts(req.user, collection, parseInt(cursor, 10))
+    .then(p => res.status(200).json(p))
+    .catch(err => {
+      console.error(err);
+      res.status(500).send(err);
+    });
+  }
+});

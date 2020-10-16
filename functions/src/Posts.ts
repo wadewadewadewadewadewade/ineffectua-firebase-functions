@@ -1,11 +1,15 @@
-
 import * as admin from 'firebase-admin';
 import { convertDocumentDataToPost, PostPrivacyTypes, Post } from './Types';
 
 export const postsPageSize = 50
 
-const getPostsByUser = (db: FirebaseFirestore.Firestore, user: admin.auth.DecodedIdToken, cursor: number = 0) => {
-  return db.collection('posts')
+const getPostsByUser = (
+  db: FirebaseFirestore.Firestore,
+  user: admin.auth.DecodedIdToken,
+  collection: string,
+  cursor: number = 0
+) => {
+  return db.collection(collection)
   .where('created.by', '==', user.uid)
   .offset(postsPageSize * cursor)
   .limit(postsPageSize * (cursor + 1))
@@ -15,9 +19,9 @@ const getPostsByUser = (db: FirebaseFirestore.Firestore, user: admin.auth.Decode
   )
 }
 
-const getPostsByPublic = (db: FirebaseFirestore.Firestore, cursor: number = 0) => {
-  return db.collection('posts')
-  .where('criteria.privacy', 'in', [PostPrivacyTypes.PUBLIC, PostPrivacyTypes.PUBLICANDFRIENDS])
+const getPostsByPublic = (db: FirebaseFirestore.Firestore, collection: string, cursor: number = 0) => {
+  return db.collection(collection)
+  .where('criteria.privacy', 'in', [PostPrivacyTypes.PUBLIC])
   .offset(postsPageSize * cursor)
   .limit(postsPageSize * (cursor + 1))
   .get()
@@ -27,10 +31,15 @@ const getPostsByPublic = (db: FirebaseFirestore.Firestore, cursor: number = 0) =
 }
 
 // https://fireship.io/snippets/express-middleware-auth-token-firebase/
-export const getPosts = (user: admin.auth.DecodedIdToken, cursor: number, key?: string): Promise<Array<Post>> => {
+export const getPosts = (
+  user: admin.auth.DecodedIdToken,
+  collection: string,
+  cursor: number = 0,
+  key?: string
+): Promise<Array<Post>> => {
   const db = admin.firestore();
   if (typeof key !== 'undefined') {
-    return db.collection('posts')
+    return db.collection(collection)
     .where(admin.firestore.FieldPath.documentId(), '==', key)
     .offset(postsPageSize * cursor)
     .limit(postsPageSize * (cursor + 1))
@@ -40,8 +49,8 @@ export const getPosts = (user: admin.auth.DecodedIdToken, cursor: number, key?: 
     )
   } else {
     return Promise.all<Array<Post>>([
-      getPostsByUser(db, user, cursor),
-      getPostsByPublic(db, cursor)
+      getPostsByUser(db, user, collection, cursor),
+      getPostsByPublic(db, collection, cursor)
     ]).then((postsCollection: Array<Array<Post>>) => {
       const postArray = new Array<Post>()
       const keysAdded: { [key: string]: boolean } = {}
@@ -60,17 +69,17 @@ export const getPosts = (user: admin.auth.DecodedIdToken, cursor: number, key?: 
 
 export const addPost = (
   user: admin.auth.DecodedIdToken,
+  collection: string,
   post: Post,
   ipAddress?: string
 ) => {
-  const collectionName = post.criteria.key ? post.criteria.key.type : 'posts';
   const db = admin.firestore();
   return new Promise<Post>((resolve, reject) => {
     if (user) {
       if (post.key !== '') {
         // its an update
         const {key, ...data} = post;
-        db.collection(collectionName)
+        db.collection(collection)
           .doc(key)
           .update(data)
           .then(() => resolve(post))
@@ -79,14 +88,14 @@ export const addPost = (
         // it's a new record
         const newCreated: Post['created'] = {
           by: user.uid,
-          on: new Date(),
+          on: new Date()
         };
         if (ipAddress !== undefined) {
           newCreated.from = ipAddress;
         }
         const {key, created, ...rest} = post;
         const newPost = {...rest, created: newCreated};
-        db.collection(collectionName)
+        db.collection(collection)
           .add(newPost)
           .then(
             (

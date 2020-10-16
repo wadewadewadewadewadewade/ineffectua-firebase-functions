@@ -11,7 +11,7 @@ service cloud.firestore {
     	}
     }
     match /tags {
-      allow read: if request.auth != null;
+      allow read, create: if request.auth != null;
       allow update, delete, create: if request.auth != null && request.auth.uid == resource.data.created.by;
       match /{document=**} {
       	allow read: if request.auth != null;
@@ -19,8 +19,24 @@ service cloud.firestore {
     	}
     }
     match /posts {
-      allow read: if request.auth != null;
-      allow update, delete, create: if request.auth != null && request.auth.uid == resource.data.created.by;
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.created.by;
+      match /{document=**} {
+      	allow read: if request.auth != null;
+        allow update, delete, create: if request.auth != null && request.auth.uid == resource.data.created.by;
+    	}
+    }
+    match /comments {
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.created.by;
+      match /{document=**} {
+      	allow read: if request.auth != null;
+        allow update, delete, create: if request.auth != null && request.auth.uid == resource.data.created.by;
+    	}
+    }
+    match /messages {
+      allow read, create: if request.auth != null && (request.auth.uid == resource.data.criteria.id || request.auth.uid == resource.data.created.by);
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.created.by;
       match /{document=**} {
       	allow read: if request.auth != null;
         allow update, delete, create: if request.auth != null && request.auth.uid == resource.data.created.by;
