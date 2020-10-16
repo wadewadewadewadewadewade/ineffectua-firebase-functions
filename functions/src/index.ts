@@ -6,7 +6,7 @@ import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as bodyParser from "body-parser";
 import { getPosts, addPost } from './Posts';
-import { getTagsByKeyArray, getTagsForAutocomplete } from './Tags';
+import { getTagsByKeyArray, getTagsForAutocomplete, addTag } from './Tags';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -118,4 +118,18 @@ app.get('/tags/:keysjson', (req: express.Request<{ keysjson: string }>, res: exp
     console.error(err);
     res.status(500).send(err);
   });
+});
+
+app.put('/tags', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const IP = req.headers['x-appengine-user-ip'] as string || req.header('x-forwarded-for') || req.connection.remoteAddress;
+    addTag(req.user, req.body, IP)
+    .then(p => res.status(201).send(p.key))
+    .catch(err => {
+      console.error(err);
+      res.status(500).send(err);
+    });
+  }
 });
