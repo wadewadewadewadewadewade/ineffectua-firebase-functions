@@ -64,7 +64,7 @@ const getPostsByUser = (db: FirebaseFirestore.Firestore, user: admin.auth.Decode
 
 const getPostsByPublic = (db: FirebaseFirestore.Firestore, cursor: number = 0) => {
   return db.collection('posts')
-  .where('criteria.privacy', '==', PostPrivacyTypes.PUBLIC)
+  .where('criteria.privacy', 'in', [PostPrivacyTypes.PUBLIC, PostPrivacyTypes.PUBLICANDFRIENDS])
   .offset(postsPageSize * cursor)
   .limit(postsPageSize * (cursor + 1))
   .get()
@@ -74,19 +74,21 @@ const getPostsByPublic = (db: FirebaseFirestore.Firestore, cursor: number = 0) =
 }
 
 // https://fireship.io/snippets/express-middleware-auth-token-firebase/
-const getPosts = (user: admin.auth.DecodedIdToken, cursorOrString: number | string = 0): Promise<Array<Post>> => {
+const getPosts = (user: admin.auth.DecodedIdToken, cursor: number, key?: string): Promise<Array<Post>> => {
   const db = admin.firestore();
-  if (typeof cursorOrString === 'string') {
+  if (typeof key !== 'undefined') {
     return db.collection('posts')
-    .where(FirebaseFirestore.FieldPath.documentId(), '==', cursorOrString)
+    .where(admin.firestore.FieldPath.documentId(), '==', key)
+    .offset(postsPageSize * cursor)
+    .limit(postsPageSize * (cursor + 1))
     .get()
     .then((querySnapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>) =>
       querySnapshot.docs.map(p => convertDocumentDataToPost(p))
     )
   } else {
     return Promise.all<Array<Post>>([
-      getPostsByUser(db, user, cursorOrString),
-      getPostsByPublic(db, cursorOrString)
+      getPostsByUser(db, user, cursor),
+      getPostsByPublic(db, cursor)
     ]).then((postsCollection: Array<Array<Post>>) => {
       const postArray = new Array<Post>()
       const keysAdded: { [key: string]: boolean } = {}
@@ -179,9 +181,15 @@ async function getFirebaseUser(req: express.Request, res: express.Response, next
 const posts: express.Express = express()
 posts.use(require('cors')({origin: true}));
 posts.use(getFirebaseUser);
-posts.get('/:cursorOrKey', (req: express.Request<{ cursorOrKey: number | string }>, res: express.Response) => {
+posts.get('/:key/:cursor', (req: express.Request<{ key: string, cursor: string }>, res: express.Response) => {
+  const {key, cursor} = req.params
   if (req.user) {
-    getPosts(req.user, req.params.cursorOrKey).then(p => res.json(p)).catch(err => console.error(err));
+    getPosts(req.user, parseInt(cursor, 10), key).then(p => res.json(p)).catch(err => console.error(err));
+  }
+});
+posts.get('/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
+  if (req.user) {
+    getPosts(req.user, parseInt(req.params.cursor, 10)).then(p => res.json(p)).catch(err => console.error(err));
   }
 });
 exports.posts = functions.https.onRequest(posts);
