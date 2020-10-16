@@ -57,3 +57,48 @@ export const getPosts = (user: admin.auth.DecodedIdToken, cursor: number, key?: 
     })
   }
 }
+
+export const addPost = (
+  user: admin.auth.DecodedIdToken,
+  post: Post,
+  ipAddress?: string
+) => {
+  const collectionName = post.criteria.key ? post.criteria.key.type : 'posts';
+  const db = admin.firestore();
+  return new Promise<Post>((resolve, reject) => {
+    if (user) {
+      if (post.key !== '') {
+        // its an update
+        const {key, ...data} = post;
+        db.collection(collectionName)
+          .doc(key)
+          .update(data)
+          .then(() => resolve(post))
+          .catch(reject);
+      } else {
+        // it's a new record
+        const newCreated: Post['created'] = {
+          by: user.uid,
+          on: new Date(),
+        };
+        if (ipAddress !== undefined) {
+          newCreated.from = ipAddress;
+        }
+        const {key, created, ...rest} = post;
+        const newPost = {...rest, created: newCreated};
+        db.collection(collectionName)
+          .add(newPost)
+          .then(
+            (
+              value: FirebaseFirestore.DocumentReference<
+                FirebaseFirestore.DocumentData
+              >
+            ) => {
+              const data: Post = {...newPost, key: value.id};
+              resolve(data);
+            }
+          ).catch(e => reject(e))
+      }
+    }
+  });
+};

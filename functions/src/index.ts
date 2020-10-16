@@ -4,7 +4,8 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
-import { getPosts } from './Posts';
+import * as bodyParser from "body-parser";
+import { getPosts, addPost } from './Posts';
 import { getComments } from './Comments';
 
 admin.initializeApp(functions.config().firebase);
@@ -41,6 +42,13 @@ async function getFirebaseUser(req: express.Request, res: express.Response, next
 const posts: express.Express = express()
 posts.use(require('cors')({origin: true}));
 posts.use(getFirebaseUser);
+posts.use(bodyParser.json());
+posts.use(bodyParser.urlencoded({ extended: false }));
+posts.put('/', (req: express.Request, res: express.Response) => {
+  if (req.user) {
+    addPost(req.user, req.body, req.headers['x-appengine-user-ip'] as string || req.header('x-forwarded-for') || req.connection.remoteAddress).then(p => res.json(p)).catch(err => console.error(err));
+  }
+})
 posts.get('/:key/:cursor', (req: express.Request<{ key: string, cursor: string }>, res: express.Response) => {
   const {key, cursor} = req.params
   if (req.user) {
@@ -57,6 +65,8 @@ exports.posts = functions.https.onRequest(posts);
 const comments: express.Express = express()
 comments.use(require('cors')({origin: true}));
 comments.use(getFirebaseUser);
+comments.use(bodyParser.json());
+comments.use(bodyParser.urlencoded({ extended: false }));
 comments.get('/:key/:cursor', (req: express.Request<{ key: string, cursor: string }>, res: express.Response) => {
   if (req.user) {
     getComments(req.user, req.params.key, parseInt(req.params.cursor, 10)).then(c => res.json(c)).catch(err => console.error(err));
