@@ -75,7 +75,8 @@ export const addPost = (
   const db = admin.firestore();
   return new Promise<Post>((resolve, reject) => {
     if (user) {
-      if (post.key !== '') {
+      console.log('addPost', 'key='+post.key, post.key === '', post.key === "",post)
+      if (post.key !== '' && typeof post.key !== 'undefined') {
         // its an update
         const {key, ...data} = post;
         db.collection(collection)
@@ -94,7 +95,6 @@ export const addPost = (
         }
         const {key, created, ...rest} = post;
         const newPost = {...rest, created: newCreated};
-        console.log('adding ' + collection, JSON.stringify(newPost))
         db.collection(collection)
           .add(newPost)
           .then(

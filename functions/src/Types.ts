@@ -82,3 +82,44 @@ export const convertDocumentDataToUserTag = (
     tagId: doc.tagId
   };
 };
+
+export type User =
+  | {
+      uid: string;
+      email: string;
+      displayName?: string;
+      photoURL?: URL;
+      public?: {
+        [item: string]: boolean;
+      };
+      tags?: Array<string>;
+    }
+  | false;
+
+  export type UserUser = {
+    uid?: string;
+    email: string;
+    displayName?: string;
+    photoURL?: URL;
+    public?: {
+      [item: string]: boolean;
+    };
+    tags?: Array<string>;
+  };
+
+  export const firebaseUserDocumentToUser = (
+    uid: string,
+    userDocument: FirebaseFirestore.DocumentData
+  ) => {
+    const {email, displayName, photoURL, tags} = userDocument;
+    const data: User = {
+      uid,
+      email,
+      displayName,
+      photoURL: photoURL && photoURL.length > 0 ? new URL(photoURL) : undefined,
+      public: userDocument.public,
+      tags
+    };
+    return data;
+  };
+  

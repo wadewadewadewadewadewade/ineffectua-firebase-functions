@@ -7,6 +7,8 @@ import * as express from 'express';
 import * as bodyParser from "body-parser";
 import { getPosts, addPost } from './Posts';
 import { getTagsByKeyArray, getTagsForAutocomplete, addTag } from './Tags';
+import { addUser, getUserById } from './Users';
+import { UserUser } from './Types';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -61,7 +63,7 @@ app.put('/:collection((posts|comments|messages))', (req: express.Request<{ colle
     res.status(403).send('Unauthorized');
   } else {
     const IP = req.headers['x-appengine-user-ip'] as string || req.header('x-forwarded-for') || req.connection.remoteAddress;
-    addPost(req.user, req.params.collection, req.body, IP)
+    addPost(req.user, req.params.collection, JSON.parse(req.body), IP)
     .then(p => res.status(201).send(p.key))
     .catch(err => {
       console.error(err);
@@ -125,8 +127,35 @@ app.put('/tags', (req: express.Request, res: express.Response) => {
     res.status(403).send('Unauthorized');
   } else {
     const IP = req.headers['x-appengine-user-ip'] as string || req.header('x-forwarded-for') || req.connection.remoteAddress;
-    addTag(req.user, req.body, IP)
+    addTag(req.user, JSON.parse(req.body), IP)
     .then(p => res.status(201).send(p.key))
+    .catch(err => {
+      console.error(err);
+      res.status(500).send(err);
+    });
+  }
+});
+
+app.put('/users/:userId', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const user = JSON.parse(req.body) as UserUser;
+    addUser(user, req.user.uid)
+    .then(u => res.status(201).send(u))
+    .catch(err => {
+      console.error(err);
+      res.status(500).send(err);
+    });
+  }
+});
+
+app.get('/users/:userId', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    getUserById(req.user.uid)
+    .then(u => res.status(201).send(u))
     .catch(err => {
       console.error(err);
       res.status(500).send(err);

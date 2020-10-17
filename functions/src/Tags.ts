@@ -100,7 +100,7 @@ export const addTag = (
   const db = admin.firestore();
   return new Promise<Tag>((resolve, reject) => {
     if (user) {
-      if (tag.key) {
+      if (tag.key !== '' && typeof tag.key !== 'undefined') {
         // its an update
         /*const { key, searchableIndex, ...data } = tag
         tag.searchableIndex = createIndex(tag.name)*/
