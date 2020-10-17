@@ -124,7 +124,7 @@ export const deletePost = async (
   post: Post
 ) => {
   const db = admin.firestore();
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<void>(async (resolve, reject) => {
     try {
       if (user) {
         // recursively delete any posts associated with this post
@@ -158,10 +158,10 @@ export const deletePost = async (
           postsToDelete.forEach(k => deletePostByKey(k, col))
         }
         if (collection === 'posts') {
-          deletePostsByCollection(post.key, 'comments');
+          await deletePostsByCollection(post.key, 'comments');
         }
-        deletePostsByCollection(post.key, collection);
-        deletePostByKey(post.key, collection);
+        await deletePostsByCollection(post.key, collection);
+        await deletePostByKey(post.key, collection);
         resolve()
       } else {
         reject('Unauthorized');
