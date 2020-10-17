@@ -107,7 +107,6 @@ export const addPost = (
                 >
               ) => {
                 const data: Post = {...newPost, key: value.id};
-                console.log('new post', JSON.stringify(data))
                 resolve(data);
               }
             ).catch(e => reject(e))
