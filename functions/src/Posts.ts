@@ -74,41 +74,100 @@ export const addPost = (
 ) => {
   const db = admin.firestore();
   return new Promise<Post>((resolve, reject) => {
-    if (user) {
-      console.log('addPost', 'key='+post.key, post.key === '', post.key === "",post)
-      if (post.key !== '' && typeof post.key !== 'undefined') {
-        // its an update
-        const {key, ...data} = post;
-        db.collection(collection)
-          .doc(key)
-          .update(data)
-          .then(() => resolve(post))
-          .catch(reject);
-      } else {
-        // it's a new record
-        const newCreated: Post['created'] = {
-          by: user.uid,
-          on: new Date()
-        };
-        if (ipAddress !== undefined) {
-          newCreated.from = ipAddress;
+    try {
+      if (user) {
+        if (post.key !== '' && typeof post.key !== 'undefined') {
+          // its an update
+          const {key, ...data} = post;
+          db.collection(collection)
+            .doc(key)
+            .update(data)
+            .then(() => resolve(post))
+            .catch(reject);
+        } else {
+          // it's a new record
+          const newCreated: Post['created'] = {
+            by: user.uid,
+            on: new Date()
+          };
+          if (ipAddress !== undefined) {
+            newCreated.from = ipAddress;
+          }
+          const {key, created, ...rest} = post;
+          const newPost = {...rest, created: newCreated};
+          db.collection(collection)
+            .add(newPost)
+            .then(
+              (
+                value: FirebaseFirestore.DocumentReference<
+                  FirebaseFirestore.DocumentData
+                >
+              ) => {
+                const data: Post = {...newPost, key: value.id};
+                console.log('new post', JSON.stringify(data))
+                resolve(data);
+              }
+            ).catch(e => reject(e))
         }
-        const {key, created, ...rest} = post;
-        const newPost = {...rest, created: newCreated};
-        db.collection(collection)
-          .add(newPost)
-          .then(
-            (
-              value: FirebaseFirestore.DocumentReference<
-                FirebaseFirestore.DocumentData
-              >
-            ) => {
-              const data: Post = {...newPost, key: value.id};
-              console.log('new post', JSON.stringify(data))
-              resolve(data);
-            }
-          ).catch(e => reject(e))
+      } else {
+        reject('Unauthorized');
       }
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
+
+export const deletePost = async (
+  user: admin.auth.DecodedIdToken,
+  collection: string,
+  post: Post
+) => {
+  const db = admin.firestore();
+  return new Promise<void>((resolve, reject) => {
+    try {
+      if (user) {
+        // recursively delete any posts associated with this post
+        const runawayLimitMax = 1000;
+        const getPostsRelatedToKey = async (key: string, col: string): Promise<Array<Post>> =>
+          db.collection(col)
+          .where('criteria.key.id', '==', post.key)
+          .get()
+          .then((querySnapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>) =>
+              querySnapshot.docs.map(p => convertDocumentDataToPost(p))
+            );
+        const deletePostByKey = (key: string, col: string): Promise<FirebaseFirestore.WriteResult> =>
+          db.collection(col)
+          .doc(key)
+          .delete()
+        const deletePostsByCollection = async (key: string, col: string) => {
+          const postsToDelete = new Array<string>();
+          let children = await getPostsRelatedToKey(key, col);
+          let runawayLimit = 0;
+          while (children && children.length > 0 && runawayLimit++ < runawayLimitMax) {
+            const childrenChildren = children.map(cp => cp.key);
+            children = new Array<Post>();
+            for (const k of childrenChildren) {
+              postsToDelete.push(k);
+              const check = await getPostsRelatedToKey(k, col);
+              if (check && check.length) {
+                check.forEach(cp => children.push(cp))
+              }
+            }
+          }
+          postsToDelete.forEach(k => deletePostByKey(k, col))
+        }
+        if (collection === 'posts') {
+          deletePostsByCollection(post.key, 'comments');
+        }
+        deletePostsByCollection(post.key, collection);
+        deletePostByKey(post.key, collection);
+        resolve()
+      } else {
+        reject('Unauthorized');
+      }
+    } catch (err) {
+      reject(err);
     }
   });
 };

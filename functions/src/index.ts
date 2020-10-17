@@ -5,7 +5,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as bodyParser from "body-parser";
-import { getPosts, addPost } from './Posts';
+import { getPosts, addPost, deletePost } from './Posts';
 import { getTagsByKeyArray, getTagsForAutocomplete, addTag } from './Tags';
 import { addUser, getUserById } from './Users';
 import { UserUser } from './Types';
@@ -66,8 +66,32 @@ app.put('/:collection((posts|comments|messages))', (req: express.Request<{ colle
     addPost(req.user, req.params.collection, JSON.parse(req.body), IP)
     .then(p => res.status(201).send(p.key))
     .catch(err => {
-      console.error(err);
-      res.status(500).send(err);
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.delete('/:collection((posts|comments|messages))', (req: express.Request<{ collection: string }>, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const post = JSON.parse(req.body);
+    const {collection} = req.params;
+    const collections = collection === 'posts' ? 'posts and comments' : collection;
+    deletePost(req.user, collection, post)
+    .then(p => res.status(201).send(`Deleted ${post.key} and related posts from ${collections}`))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
     });
   }
 });
@@ -80,8 +104,12 @@ app.get('/:collection((posts|comments|messages))/:key/:cursor', (req: express.Re
     getPosts(req.user, collection, parseInt(cursor, 10), key)
     .then(p => res.status(200).json(p))
     .catch(err => {
-      console.error(err);
-      res.status(500).send(err);
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
     });
   }
 });
@@ -94,8 +122,12 @@ app.get('/:collection((posts|comments|messages))/:cursor', (req: express.Request
     getPosts(req.user, collection, parseInt(cursor, 10))
     .then(p => res.status(200).json(p))
     .catch(err => {
-      console.error(err);
-      res.status(500).send(err);
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
     });
   }
 });
@@ -106,8 +138,12 @@ app.get('/tags/:prefix/:keysjson', (req: express.Request<{ prefix: string, keysj
   getTagsForAutocomplete(prefix, keys)
   .then(p => res.status(200).json(p))
   .catch(err => {
-    console.error(err);
-    res.status(500).send(err);
+    if (err === 'Unauthorized') {
+      res.status(403).send('Unauthorized');
+    } else {
+      console.error(err);
+      res.status(500).send(err);
+    }
   });
 });
 
@@ -117,8 +153,12 @@ app.get('/tags/:keysjson', (req: express.Request<{ keysjson: string }>, res: exp
   getTagsByKeyArray(keys)
   .then(p => res.status(200).json(p))
   .catch(err => {
-    console.error(err);
-    res.status(500).send(err);
+    if (err === 'Unauthorized') {
+      res.status(403).send('Unauthorized');
+    } else {
+      console.error(err);
+      res.status(500).send(err);
+    }
   });
 });
 
@@ -130,8 +170,12 @@ app.put('/tags', (req: express.Request, res: express.Response) => {
     addTag(req.user, JSON.parse(req.body), IP)
     .then(p => res.status(201).send(p.key))
     .catch(err => {
-      console.error(err);
-      res.status(500).send(err);
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
     });
   }
 });
@@ -144,8 +188,12 @@ app.put('/users/:userId', (req: express.Request, res: express.Response) => {
     addUser(user, req.user.uid)
     .then(u => res.status(201).send(u))
     .catch(err => {
-      console.error(err);
-      res.status(500).send(err);
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
     });
   }
 });
@@ -157,8 +205,12 @@ app.get('/users/:userId', (req: express.Request, res: express.Response) => {
     getUserById(req.user.uid)
     .then(u => res.status(201).send(u))
     .catch(err => {
-      console.error(err);
-      res.status(500).send(err);
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
     });
   }
 });
