@@ -11,6 +11,7 @@ const getPostsByUser = (
 ) => {
   return db.collection(collection)
   .where('created.by', '==', user.uid)
+  .orderBy('created.on')
   .offset(postsPageSize * cursor)
   .limit(postsPageSize * (cursor + 1))
   .get()
@@ -22,6 +23,7 @@ const getPostsByUser = (
 const getPostsByPublic = (db: FirebaseFirestore.Firestore, collection: string, cursor: number = 0) => {
   return db.collection(collection)
   .where('criteria.privacy', 'in', [PostPrivacyTypes.PUBLIC])
+  .orderBy('created.on')
   .offset(postsPageSize * cursor)
   .limit(postsPageSize * (cursor + 1))
   .get()
@@ -40,6 +42,7 @@ export const getPosts = (
   if (typeof key !== 'undefined') {
     return db.collection(collection)
     .where('criteria.key.id', '==', key)
+    .orderBy('created.on')
     .offset(postsPageSize * cursor)
     .limit(postsPageSize * (cursor + 1))
     .get()
@@ -132,6 +135,7 @@ export const deletePost = async (
         const getPostsRelatedToKey = async (key: string, col: string): Promise<Array<Post>> =>
           db.collection(col)
           .where('criteria.key.id', '==', post.key)
+          .orderBy('created.on')
           .get()
           .then((querySnapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>) =>
               querySnapshot.docs.map(p => convertDocumentDataToPost(p))
