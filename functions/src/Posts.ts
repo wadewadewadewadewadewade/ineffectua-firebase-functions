@@ -39,7 +39,7 @@ export const getPosts = (
   const db = admin.firestore();
   if (typeof key !== 'undefined') {
     return db.collection(collection)
-    .where(admin.firestore.FieldPath.documentId(), '==', key)
+    .where('criteria.key.id', '==', key)
     .offset(postsPageSize * cursor)
     .limit(postsPageSize * (cursor + 1))
     .get()
