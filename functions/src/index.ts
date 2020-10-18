@@ -7,7 +7,7 @@ import * as express from 'express';
 import * as bodyParser from "body-parser";
 import { getPosts, addPost, deletePost } from './Posts';
 import { getTagsByKeyArray, getTagsForAutocomplete, addTag } from './Tags';
-import { addUser, getUserById } from './Users';
+import { addUser, getTagIdsForUser, getUserById, getCalendarForUser } from './Users';
 import { UserUser } from './Types';
 
 admin.initializeApp(functions.config().firebase);
@@ -203,7 +203,41 @@ app.get('/users/:userId', (req: express.Request, res: express.Response) => {
     res.status(403).send('Unauthorized');
   } else {
     getUserById(req.user.uid)
-    .then(u => res.status(201).send(u))
+    .then(u => res.status(200).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.get('/users/:userId/tags', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    getTagIdsForUser(req.user.uid)
+    .then(u => res.status(200).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.get('/users/:userId/calendar', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    getCalendarForUser(req.user.uid)
+    .then(u => res.status(200).send(u))
     .catch(err => {
       if (err === 'Unauthorized') {
         res.status(403).send('Unauthorized');

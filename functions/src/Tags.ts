@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { convertDocumentDataToTag, convertDocumentDataToUserTag, Tag } from './Types';
+import { convertDocumentDataToTag, Tag } from './Types';
 
 export const getTagsForAutocomplete = (
   prefix: string,
@@ -64,30 +64,6 @@ export const getTagsByKeyArray = (
           resolve(arr);
         })
         .catch((e) => reject(e));
-    }
-  });
-};
-
-export const getTagIdsForUser = (
-  userId?: string
-) => {
-  const db = admin.firestore();
-  return new Promise<Array<string>>((resolve, reject) => {
-    if (!userId) {
-      resolve(new Array<string>());
-    } else {
-      db.collection('users')
-        .doc(userId)
-        .collection('tags')
-        .get()
-        .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {
-          const userTags = querySnapshot.docs.map((tagIdDoc) =>
-            convertDocumentDataToUserTag(tagIdDoc)
-          );
-          const userTagIds = userTags.map((ut) => ut.tagId);
-          resolve(userTagIds);
-        })
-        .catch(reject);
     }
   });
 };

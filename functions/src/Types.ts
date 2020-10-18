@@ -123,3 +123,46 @@ export type User =
     return data;
   };
   
+export const convertDocumentDataToCalendarEntry = (
+  data: FirebaseFirestore.DocumentData,
+): CalendarEntry => {
+  const doc = data.data();
+  return {
+    key: data.id,
+    typeId: doc.typeId,
+    window: {
+      starts: new Date(doc.window.starts.seconds * 1000),
+      ends: new Date(doc.window.ends.seconds * 1000),
+    },
+    title: doc.title,
+    description: doc.description,
+    contacts: doc.contacts,
+  };
+};
+
+export type CalendarWindow = {
+  starts: Date;
+  ends: Date;
+};
+
+export type CalendarEntry = {
+  key?: string;
+  typeId?: string;
+  window: CalendarWindow;
+  title: string;
+  description?: string;
+  contacts?: Array<string>;
+};
+
+export type CalendarRecord = {
+  window: CalendarWindow;
+  items: Array<CalendarEntry>;
+};
+
+export type CalendarType = {
+  [id: string]: CalendarEntry;
+};
+
+export type CalendarState = {
+  dates: CalendarType;
+};
