@@ -124,7 +124,7 @@ export type User =
   };
   
 export const convertDocumentDataToCalendarEntry = (
-  data: FirebaseFirestore.DocumentData,
+  data: FirebaseFirestore.DocumentData
 ): CalendarEntry => {
   const doc = data.data();
   return {
@@ -132,11 +132,11 @@ export const convertDocumentDataToCalendarEntry = (
     typeId: doc.typeId,
     window: {
       starts: new Date(doc.window.starts.seconds * 1000),
-      ends: new Date(doc.window.ends.seconds * 1000),
+      ends: new Date(doc.window.ends.seconds * 1000)
     },
     title: doc.title,
     description: doc.description,
-    contacts: doc.contacts,
+    contacts: doc.contacts
   };
 };
 

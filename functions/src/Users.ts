@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { firebaseUserDocumentToUser, User, UserUser, UserTag, convertDocumentDataToCalendarEntry, CalendarType } from "./Types";
+import { firebaseUserDocumentToUser, User, UserUser, UserTag } from "./Types";
 
 export const getUserById = (
   userId: string
@@ -58,18 +58,18 @@ export const addUser = (
 };
 
 const convertDocumentDataToUserTag = (
-  data: FirebaseFirestore.DocumentData,
+  data: FirebaseFirestore.DocumentData
 ): UserTag => {
   const doc = data.data();
   return {
     key: data.id,
     name: doc.name,
-    tagId: doc.tagId,
+    tagId: doc.tagId
   };
 };
 
 export const getTagIdsForUser = (
-  userId: string,
+  userId: string
 ) => {
   const db = admin.firestore();
   return new Promise<Array<string>>((resolve, reject) => {
@@ -82,41 +82,10 @@ export const getTagIdsForUser = (
         .get()
         .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {
           const userTags = querySnapshot.docs.map((tagIdDoc) =>
-            convertDocumentDataToUserTag(tagIdDoc),
+            convertDocumentDataToUserTag(tagIdDoc)
           );
           const userTagIds = userTags.map((ut) => ut.tagId);
           resolve(userTagIds);
-        })
-        .catch(reject);
-    }
-  });
-};
-
-export const getCalendarForUser = (
-  userId: string,
-) => {
-  const db = admin.firestore();
-  return new Promise<CalendarType>((resolve, reject) => {
-    if (!userId) {
-      resolve({});
-    } else {
-      db.collection('users')
-        .doc(userId)
-        .collection('calendar')
-        .orderBy('window.starts')
-        .get()
-        .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {
-          const dates: CalendarType = {};
-          const arr = querySnapshot.docs.map((d) => {
-            const val = convertDocumentDataToCalendarEntry(d);
-            return val;
-          });
-          arr.forEach((d) => {
-            if (d.key) {
-              dates[d.key] = d;
-            }
-          });
-          resolve(dates)
         })
         .catch(reject);
     }
