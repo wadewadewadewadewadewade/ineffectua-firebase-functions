@@ -216,7 +216,7 @@ app.get('/users', (req: express.Request, res: express.Response) => {
   }
 });
 
-app.get('/users/tags', (req: express.Request, res: express.Response) => {
+app.get('/users/tags/:cursor', (req: express.Request, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
@@ -251,7 +251,7 @@ app.put('/users/calendar', (req: express.Request, res: express.Response) => {
   }
 });
 
-app.get('/users/calendar', (req: express.Request, res: express.Response) => {
+app.get('/users/calendar/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
