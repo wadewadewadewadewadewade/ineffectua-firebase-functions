@@ -87,9 +87,8 @@ app.delete('/:collection((posts|comments|messages))', (req: express.Request<{ co
   } else {
     const post = JSON.parse(req.body);
     const {collection} = req.params;
-    const collections = collection === 'posts' ? 'posts and comments' : collection;
     deletePost(req.user, collection, post)
-    .then(p => res.status(201).send(`Deleted ${post.key} and related posts from ${collections}`))
+    .then(p => res.status(201).send(p))
     .catch(err => {
       if (err === 'Unauthorized') {
         res.status(403).send('Unauthorized');
