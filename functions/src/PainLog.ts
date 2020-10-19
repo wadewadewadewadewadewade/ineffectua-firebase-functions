@@ -62,7 +62,8 @@ export const addPainLog = (
             .update({next: data.key})
             .then(() => resolve(data))
             .catch(reject);
-        });
+        })
+        .catch(reject);
     } else {
       // it's a new record
       painLogLocation.created = new Date(Date.now());

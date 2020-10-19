@@ -287,7 +287,7 @@ export type PainLogType = {
 };
 
 export const convertDocumentDataToPainLogLocation = (
-  data: FirebaseFirestore.DocumentData,
+  data: FirebaseFirestore.DocumentData
 ): PainLogLocation => {
   const doc = data.data();
   const painLogLocationData: PainLogLocation = {
@@ -303,7 +303,7 @@ export const convertDocumentDataToPainLogLocation = (
     severity: doc.severity,
     medications: doc.medications,
     next: doc.next,
-    previous: doc.previous,
+    previous: doc.previous
   };
   if (doc.position) {
     painLogLocationData.position = doc.position;
