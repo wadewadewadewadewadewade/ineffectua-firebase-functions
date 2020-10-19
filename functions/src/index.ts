@@ -1,5 +1,5 @@
 import {addMedication, getMedications} from './Medications';
-import {DataType, Medication, CalendarEntry, UserUser} from './Types';
+import {DataType, Medication, CalendarEntry, UserUser, Contact, PainLogLocation} from './Types';
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
 
@@ -13,6 +13,7 @@ import {addUser, getTagIdsForUser, getUserById} from './Users';
 import {addCalendarDate, getCalendar} from './Calendar';
 import {getDataTypes, addDataType} from './DataTypes';
 import { addPainLog, getPainLog } from './PainLog';
+import { addContact, getContacts } from './Contacts';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -341,12 +342,47 @@ app.get('/users/medications/:cursor', (req: express.Request<{ cursor: string }>,
   }
 });
 
+app.put('/users/contacts', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const contact = JSON.parse(req.body) as Contact;
+    addContact(req.user.uid, contact)
+    .then(u => res.status(201).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.get('/users/contacts/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    getContacts(req.user.uid)
+    .then(u => res.status(200).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
 app.put('/users/painlog', (req: express.Request, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
-    const medciation = JSON.parse(req.body) as Medication;
-    addPainLog(req.user.uid, medciation)
+    const location = JSON.parse(req.body) as PainLogLocation;
+    addPainLog(req.user.uid, location)
     .then(u => res.status(201).send(u))
     .catch(err => {
       if (err === 'Unauthorized') {
