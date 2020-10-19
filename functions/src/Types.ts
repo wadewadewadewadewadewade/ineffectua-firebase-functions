@@ -264,3 +264,49 @@ export const convertDocumentDataToMedication = (
   }
   return medicaitonData;
 };
+
+export type PainLogLocation = {
+  key?: string;
+  created?: Date;
+  typeId?: string;
+  position?: {
+    x: number;
+    y: number;
+  };
+  title?: string;
+  active?: boolean;
+  description?: string;
+  severity?: number;
+  medications?: Array<string>;
+  previous?: string;
+  next?: string;
+};
+
+export type PainLogType = {
+  [id: string]: PainLogLocation;
+};
+
+export const convertDocumentDataToPainLogLocation = (
+  data: FirebaseFirestore.DocumentData,
+): PainLogLocation => {
+  const doc = data.data();
+  const painLogLocationData: PainLogLocation = {
+    key: data.id,
+    created:
+      doc.created &&
+      doc.created.seconds &&
+      new Date(doc.created.seconds * 1000),
+    typeId: doc.typeId,
+    title: doc.title,
+    active: doc.active,
+    description: doc.description,
+    severity: doc.severity,
+    medications: doc.medications,
+    next: doc.next,
+    previous: doc.previous,
+  };
+  if (doc.position) {
+    painLogLocationData.position = doc.position;
+  }
+  return painLogLocationData;
+};

@@ -12,6 +12,7 @@ import {getTagsByKeyArray, getTagsForAutocomplete, addTag} from './Tags';
 import {addUser, getTagIdsForUser, getUserById} from './Users';
 import {addCalendarDate, getCalendar} from './Calendar';
 import {getDataTypes, addDataType} from './DataTypes';
+import { addPainLog, getPainLog } from './PainLog';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -328,6 +329,41 @@ app.get('/users/medications/:cursor', (req: express.Request<{ cursor: string }>,
     res.status(403).send('Unauthorized');
   } else {
     getMedications(req.user.uid)
+    .then(u => res.status(200).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.put('/users/painlog', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const medciation = JSON.parse(req.body) as Medication;
+    addPainLog(req.user.uid, medciation)
+    .then(u => res.status(201).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.get('/users/painlog/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    getPainLog(req.user.uid)
     .then(u => res.status(200).send(u))
     .catch(err => {
       if (err === 'Unauthorized') {
