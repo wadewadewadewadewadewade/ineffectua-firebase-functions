@@ -1,3 +1,5 @@
+import {addMedication, getMedications} from './Medications';
+import {DataType, Medication, CalendarEntry, UserUser} from './Types';
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
 
@@ -5,11 +7,11 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as bodyParser from "body-parser";
-import { getPosts, addPost, deletePost } from './Posts';
-import { getTagsByKeyArray, getTagsForAutocomplete, addTag } from './Tags';
-import { addUser, getTagIdsForUser, getUserById } from './Users';
-import { addCalendarDate, getCalendar } from './Calendar';
-import { CalendarEntry, UserUser } from './Types';
+import {getPosts, addPost, deletePost } from './Posts';
+import {getTagsByKeyArray, getTagsForAutocomplete, addTag} from './Tags';
+import {addUser, getTagIdsForUser, getUserById} from './Users';
+import {addCalendarDate, getCalendar} from './Calendar';
+import {getDataTypes, addDataType} from './DataTypes';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -256,6 +258,76 @@ app.get('/users/calendar/:cursor', (req: express.Request<{ cursor: string }>, re
     res.status(403).send('Unauthorized');
   } else {
     getCalendar(req.user.uid)
+    .then(u => res.status(200).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.put('/users/datatypes', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const datatype = JSON.parse(req.body) as DataType;
+    addDataType(req.user.uid, datatype)
+    .then(u => res.status(201).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.get('/users/datatypes/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    getDataTypes(req.user.uid)
+    .then(u => res.status(200).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.put('/users/medciations', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const medciation = JSON.parse(req.body) as Medication;
+    addMedication(req.user.uid, medciation)
+    .then(u => res.status(201).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.get('/users/medications/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    getMedications(req.user.uid)
     .then(u => res.status(200).send(u))
     .catch(err => {
       if (err === 'Unauthorized') {

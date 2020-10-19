@@ -163,6 +163,104 @@ export type CalendarType = {
   [id: string]: CalendarEntry;
 };
 
-export type CalendarState = {
-  dates: CalendarType;
+export type DataType = {
+  key?: string;
+  title: string;
+  color: string;
+};
+
+export type DataTypesType = {
+  [id: string]: DataType;
+};
+
+export const convertDocumentDataToDataType = (
+  data: FirebaseFirestore.DocumentData
+): DataType => {
+  const doc = data.data();
+  return {
+    key: data.id,
+    title: doc.title,
+    color: doc.color
+  };
+};
+
+export type Contact = {
+  key?: string;
+  created?: Date;
+  typeId?: string;
+  name: string;
+  number?: string;
+  email?: string;
+  location?: string;
+  description?: string;
+};
+
+export type ContactsType = {
+  [id: string]: Contact;
+};
+
+export const convertDocumentDataToContact = (
+  data: FirebaseFirestore.DocumentData
+): Contact => {
+  const doc = data.data();
+  const contactData: Contact = {
+    key: data.id,
+    created:
+      doc.created &&
+      doc.created.seconds &&
+      new Date(doc.created.seconds * 1000),
+    typeId: doc.typeId,
+    name: doc.name,
+    number: doc.number,
+    email: doc.email,
+    location: doc.location,
+    description: doc.description
+  };
+  if (doc.created && doc.created.seconds) {
+    contactData.created = new Date(doc.created.seconds * 1000);
+  }
+  return contactData;
+};
+
+export type Medication = {
+  key?: string;
+  created?: Date;
+  typeId?: string;
+  name: string;
+  active: boolean;
+  prescribed?: string;
+  lastFilled?: Date;
+  refills?: number;
+  description?: string;
+};
+
+export type MedicationsType = {
+  [id: string]: Medication;
+};
+
+export const convertDocumentDataToMedication = (
+  data: FirebaseFirestore.DocumentData
+): Medication => {
+  const doc = data.data();
+  const medicaitonData: Medication = {
+    key: data.id,
+    created:
+      doc.created &&
+      doc.created.seconds &&
+      new Date(doc.created.seconds * 1000),
+    typeId: doc.typeId,
+    name: doc.name,
+    active: doc.active,
+    prescribed: doc.prescribed, // ContactID
+    lastFilled:
+      doc.lastFilled &&
+      doc.lastFilled.seconds &&
+      new Date(doc.lastFilled.seconds * 1000),
+    refills: doc.refills,
+    description: doc.description
+  };
+  if (doc.created && doc.created.seconds) {
+    medicaitonData.created = new Date(doc.created.seconds * 1000);
+  }
+  return medicaitonData;
 };
