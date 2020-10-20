@@ -394,12 +394,12 @@ app.get('/users/datatypes/:cursor', (req: express.Request<{ cursor: string }>, r
   }
 });
 
-app.put('/users/medciations', (req: express.Request, res: express.Response) => {
+app.put('/users/medications', (req: express.Request, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
-    const medciation = JSON.parse(req.body) as Medication;
-    addMedication(req.user.uid, medciation)
+    const medication = JSON.parse(req.body) as Medication;
+    addMedication(req.user.uid, medication)
     .then(u => res.status(201).send(u))
     .catch(err => {
       if (err === 'Unauthorized') {
