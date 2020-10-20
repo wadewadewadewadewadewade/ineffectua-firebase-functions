@@ -56,7 +56,6 @@ export type Tag = {
 
 export type UserTag = {
   key?: string;
-  name: string;
   tagId: string;
 };
 
@@ -78,7 +77,6 @@ export const convertDocumentDataToUserTag = (
   const doc = data.data();
   return {
     key: data.id,
-    name: doc.name,
     tagId: doc.tagId
   };
 };

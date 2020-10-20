@@ -63,18 +63,17 @@ const convertDocumentDataToUserTag = (
   const doc = data.data();
   return {
     key: data.id,
-    name: doc.name,
     tagId: doc.tagId
   };
 };
 
-export const getTagIdsForUser = (
+export const getTagsForUser = (
   userId: string
 ) => {
   const db = admin.firestore();
-  return new Promise<Array<string>>((resolve, reject) => {
+  return new Promise<Array<UserTag>>((resolve, reject) => {
     if (!userId) {
-      resolve(new Array<string>());
+      resolve(new Array<UserTag>());
     } else {
       db.collection('users')
         .doc(userId)
@@ -84,8 +83,7 @@ export const getTagIdsForUser = (
           const userTags = querySnapshot.docs.map((tagIdDoc) =>
             convertDocumentDataToUserTag(tagIdDoc)
           );
-          const userTagIds = userTags.map((ut) => ut.tagId);
-          resolve(userTagIds);
+          resolve(userTags);
         })
         .catch(reject);
     }

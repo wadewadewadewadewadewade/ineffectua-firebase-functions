@@ -7,7 +7,7 @@ import * as express from 'express';
 import * as bodyParser from "body-parser";
 import {getPosts, addPost, deletePost } from './Posts';
 import {getTagsByKeyArray, getTagsForAutocomplete, addTag} from './Tags';
-import {addUser, addUserTag, deleteUserTag, getTagIdsForUser, getUserById} from './Users';
+import {addUser, addUserTag, deleteUserTag, getTagsForUser, getUserById} from './Users';
 import {addCalendarEntry, deleteCalendarEntry, getCalendar} from './Calendar';
 import {getDataTypes, addDataType, deleteDataType} from './DataTypes';
 import {addPainLog, getPainLog} from './PainLog';
@@ -222,7 +222,7 @@ app.get('/users/tags/:cursor', (req: express.Request, res: express.Response) => 
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
-    getTagIdsForUser(req.user.uid)
+    getTagsForUser(req.user.uid)
     .then(u => res.status(200).send(u))
     .catch(err => {
       if (err === 'Unauthorized') {
@@ -239,7 +239,7 @@ app.put('/users/tags', (req: express.Request, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
-    const tag = JSON.parse(req.body) as UserTag;
+    const tag: UserTag = JSON.parse(req.body);
     addUserTag(req.user, tag)
     .then(t => res.status(201).send(t))
     .catch(err => {
@@ -257,7 +257,7 @@ app.delete('/users/tags', (req: express.Request, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
-    const tag = JSON.parse(req.body);
+    const tag: UserTag = JSON.parse(req.body);
     deleteUserTag(req.user.uid, tag)
     .then(t => res.status(200).send(t))
     .catch(err => {
@@ -275,7 +275,7 @@ app.get('/users/:userId/tags/:cursor', (req: express.Request<{ userId: string }>
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
-    getTagIdsForUser(req.params.userId)
+    getTagsForUser(req.params.userId)
     .then(u => res.status(200).send(u))
     .catch(err => {
       if (err === 'Unauthorized') {
