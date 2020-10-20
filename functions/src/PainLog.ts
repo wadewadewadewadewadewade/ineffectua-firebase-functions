@@ -9,7 +9,6 @@ export const getPainLog = (
     db.collection('users')
       .doc(userId)
       .collection('painlog')
-      .orderBy('name')
       .get()
       .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {
         const painLog: PainLogType = {};
