@@ -12,17 +12,17 @@ export const getMedications = (
       .orderBy('name')
       .get()
       .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {
-        const contacts: MedicationsType = {};
+        const medications: MedicationsType = {};
         const arr = querySnapshot.docs.map((d) => {
           const val = convertDocumentDataToMedication(d);
           return val;
         });
         arr.forEach((d) => {
           if (d.key) {
-            contacts[d.key] = d;
+            medications[d.key] = d;
           }
         });
-        resolve(contacts)
+        resolve(medications)
       })
       .catch(reject);
   });
@@ -69,7 +69,7 @@ export const deleteMedication = async (
       if (medication.key !== '' && typeof medication.key !== 'undefined') {
         db.collection('users')
         .doc(userId)
-        .collection('contacts')
+        .collection('medications')
           .doc(medication.key)
           .delete()
           .then(() => resolve(medication))
