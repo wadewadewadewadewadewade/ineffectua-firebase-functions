@@ -34,7 +34,7 @@ export const addCalendarDate = (
 ): Promise<CalendarEntry> => {
   const db = admin.firestore();
   return new Promise<CalendarEntry>((resolve, reject) => {
-    if (date.key) {
+    if (date.key !== '' && typeof date.key !== 'undefined') {
       // its an update
       const {key, ...data} = date;
       db.collection('users')
@@ -50,7 +50,10 @@ export const addCalendarDate = (
         .doc(userId)
         .collection('calendar')
         .add(date)
-        .then((d) => resolve(convertDocumentDataToCalendarEntry(d)))
+        .then((value) => {
+          const newDate: CalendarEntry = {...date, key: value.id};
+          resolve(newDate);
+        })
         .catch(reject);
     }
   });

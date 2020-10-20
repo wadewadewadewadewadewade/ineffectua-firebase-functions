@@ -33,7 +33,7 @@ export const addDataType = (
 ): Promise<DataType> => {
   const db = admin.firestore();
   return new Promise<DataType>((resolve, reject) => {
-    if (datatype.key) {
+    if (datatype.key !== '' && typeof datatype.key !== 'undefined') {
       // its an update
       const {key, ...data} = datatype;
       db.collection('users')
@@ -49,7 +49,10 @@ export const addDataType = (
         .doc(userId)
         .collection('datatypes')
         .add(datatype)
-        .then((d) => resolve(convertDocumentDataToDataType(d)))
+        .then((value) => {
+          const newDatatype: DataType = {...datatype, key: value.id};
+          resolve(newDatatype);
+        })
         .catch(reject);
     }
   });

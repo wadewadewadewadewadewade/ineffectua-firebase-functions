@@ -34,7 +34,7 @@ export const addPainLog = (
 ): Promise<PainLogLocation> => {
   const db = admin.firestore();
   return new Promise<PainLogLocation>((resolve, reject) => {
-    if (painLogLocation.key) {
+    if (painLogLocation.key !== '' && typeof painLogLocation.key !== 'undefined') {
       // its an update
       const {key, ...data} = painLogLocation;
       db.collection('users')

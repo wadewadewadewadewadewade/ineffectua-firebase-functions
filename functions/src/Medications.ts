@@ -34,7 +34,7 @@ export const addMedication = (
 ): Promise<Medication> => {
   const db = admin.firestore();
   return new Promise<Medication>((resolve, reject) => {
-    if (medication.key) {
+    if (medication.key !== '' && typeof medication.key !== 'undefined') {
       // its an update
       const {key, ...data} = medication;
       db.collection('users')
@@ -50,7 +50,10 @@ export const addMedication = (
         .doc(userId)
         .collection('medications')
         .add(medication)
-        .then((d) => resolve(convertDocumentDataToMedication(d)))
+        .then((value) => {
+          const newMedication: Medication = {...medication, key: value.id};
+          resolve(newMedication);
+        })
         .catch(reject);
     }
   });

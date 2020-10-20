@@ -34,7 +34,7 @@ export const addContact = (
 ): Promise<Contact> => {
   const db = admin.firestore();
   return new Promise<Contact>((resolve, reject) => {
-    if (contact.key) {
+    if (contact.key !== '' && typeof contact.key !== 'undefined') {
       // its an update
       const {key, ...data} = contact;
       db.collection('users')
@@ -50,7 +50,10 @@ export const addContact = (
         .doc(userId)
         .collection('contacts')
         .add(contact)
-        .then((d) => resolve(convertDocumentDataToContact(d)))
+        .then((value) => {
+          const newContact: Contact = {...contact, key: value.id};
+          resolve(newContact);
+        })
         .catch(reject);
     }
   });
