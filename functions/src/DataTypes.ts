@@ -57,3 +57,27 @@ export const addDataType = (
     }
   });
 };
+
+export const deleteDataType = async (
+  userId: string,
+  datatype: DataType
+) => {
+  const db = admin.firestore();
+  return new Promise<DataType>(async (resolve, reject) => {
+    try {
+      if (datatype.key !== '' && typeof datatype.key !== 'undefined') {
+        db.collection('users')
+        .doc(userId)
+        .collection('calendar')
+          .doc(datatype.key)
+          .delete()
+          .then(() => resolve(datatype))
+          .catch(reject);
+      } else {
+        reject('DataType ID missing');
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+};

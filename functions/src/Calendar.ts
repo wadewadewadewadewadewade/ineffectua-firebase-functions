@@ -28,7 +28,7 @@ export const getCalendar = (
   });
 };
 
-export const addCalendarDate = (
+export const addCalendarEntry = (
   userId: string,
   date: CalendarEntry
 ): Promise<CalendarEntry> => {
@@ -55,6 +55,30 @@ export const addCalendarDate = (
           resolve(newDate);
         })
         .catch(reject);
+    }
+  });
+};
+
+export const deleteCalendarEntry = async (
+  userId: string,
+  date: CalendarEntry
+) => {
+  const db = admin.firestore();
+  return new Promise<CalendarEntry>(async (resolve, reject) => {
+    try {
+      if (date.key !== '' && typeof date.key !== 'undefined') {
+        db.collection('users')
+        .doc(userId)
+        .collection('calendar')
+          .doc(date.key)
+          .delete()
+          .then(() => resolve(date))
+          .catch(reject);
+      } else {
+        reject('CalendarEntry ID missing');
+      }
+    } catch (err) {
+      reject(err);
     }
   });
 };

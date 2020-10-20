@@ -58,3 +58,27 @@ export const addMedication = (
     }
   });
 };
+
+export const deleteMedication = async (
+  userId: string,
+  medication: Medication
+) => {
+  const db = admin.firestore();
+  return new Promise<Medication>(async (resolve, reject) => {
+    try {
+      if (medication.key !== '' && typeof medication.key !== 'undefined') {
+        db.collection('users')
+        .doc(userId)
+        .collection('contacts')
+          .doc(medication.key)
+          .delete()
+          .then(() => resolve(medication))
+          .catch(reject);
+      } else {
+        reject('Contact ID missing');
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+};

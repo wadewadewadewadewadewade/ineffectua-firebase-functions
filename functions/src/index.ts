@@ -1,19 +1,18 @@
-import {addMedication, getMedications} from './Medications';
-import {DataType, Medication, CalendarEntry, UserUser, Contact, PainLogLocation} from './Types';
+import {DataType, Medication, CalendarEntry, UserUser, Contact, PainLogLocation, UserTag} from './Types';
 // // Start writing Firebase Functions
 // // https://firebase.google.com/docs/functions/typescript
-
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as bodyParser from "body-parser";
 import {getPosts, addPost, deletePost } from './Posts';
 import {getTagsByKeyArray, getTagsForAutocomplete, addTag} from './Tags';
-import {addUser, getTagIdsForUser, getUserById} from './Users';
-import {addCalendarDate, getCalendar} from './Calendar';
-import {getDataTypes, addDataType} from './DataTypes';
-import { addPainLog, getPainLog } from './PainLog';
-import { addContact, getContacts } from './Contacts';
+import {addUser, addUserTag, deleteUserTag, getTagIdsForUser, getUserById} from './Users';
+import {addCalendarEntry, deleteCalendarEntry, getCalendar} from './Calendar';
+import {getDataTypes, addDataType, deleteDataType} from './DataTypes';
+import {addPainLog, getPainLog} from './PainLog';
+import {addContact, deleteContact, getContacts} from './Contacts';
+import {addMedication, getMedications, deleteMedication} from './Medications';
 
 admin.initializeApp(functions.config().firebase);
 
@@ -88,7 +87,7 @@ app.delete('/:collection((posts|comments|messages))', (req: express.Request<{ co
     const post = JSON.parse(req.body);
     const {collection} = req.params;
     deletePost(req.user, collection, post)
-    .then(p => res.status(201).send(p))
+    .then(p => res.status(200).send(p))
     .catch(err => {
       if (err === 'Unauthorized') {
         res.status(403).send('Unauthorized');
@@ -236,6 +235,42 @@ app.get('/users/tags/:cursor', (req: express.Request, res: express.Response) => 
   }
 });
 
+app.put('/users/tags', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const tag = JSON.parse(req.body) as UserTag;
+    addUserTag(req.user, tag)
+    .then(t => res.status(201).send(t))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.delete('/users/tags', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const tag = JSON.parse(req.body);
+    deleteUserTag(req.user.uid, tag)
+    .then(t => res.status(200).send(t))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
 app.get('/users/:userId/tags/:cursor', (req: express.Request<{ userId: string }>, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
@@ -258,8 +293,26 @@ app.put('/users/calendar', (req: express.Request, res: express.Response) => {
     res.status(403).send('Unauthorized');
   } else {
     const date = JSON.parse(req.body) as CalendarEntry;
-    addCalendarDate(req.user.uid, date)
+    addCalendarEntry(req.user.uid, date)
     .then(u => res.status(201).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.delete('/users/calendar', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const date = JSON.parse(req.body);
+    deleteCalendarEntry(req.user.uid, date)
+    .then(d => res.status(200).send(d))
     .catch(err => {
       if (err === 'Unauthorized') {
         res.status(403).send('Unauthorized');
@@ -306,6 +359,24 @@ app.put('/users/datatypes', (req: express.Request, res: express.Response) => {
   }
 });
 
+app.delete('/users/datatypes', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const datatype = JSON.parse(req.body);
+    deleteDataType(req.user.uid, datatype)
+    .then(d => res.status(200).send(d))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
 app.get('/users/datatypes/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
@@ -341,6 +412,24 @@ app.put('/users/medciations', (req: express.Request, res: express.Response) => {
   }
 });
 
+app.delete('/users/medications', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const medication = JSON.parse(req.body);
+    deleteMedication(req.user.uid, medication)
+    .then(m => res.status(200).send(m))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
 app.get('/users/medications/:cursor', (req: express.Request<{ cursor: string }>, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
@@ -365,6 +454,24 @@ app.put('/users/contacts', (req: express.Request, res: express.Response) => {
     const contact = JSON.parse(req.body) as Contact;
     addContact(req.user.uid, contact)
     .then(u => res.status(201).send(u))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
+});
+
+app.delete('/users/contacts', (req: express.Request, res: express.Response) => {
+  if (!req.user) {
+    res.status(403).send('Unauthorized');
+  } else {
+    const contact = JSON.parse(req.body);
+    deleteContact(req.user.uid, contact)
+    .then(c => res.status(200).send(c))
     .catch(err => {
       if (err === 'Unauthorized') {
         res.status(403).send('Unauthorized');

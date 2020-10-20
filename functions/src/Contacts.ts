@@ -46,6 +46,7 @@ export const addContact = (
         .catch(reject);
     } else {
       // it's a new record
+      contact.created = new Date();
       db.collection('users')
         .doc(userId)
         .collection('contacts')
@@ -55,6 +56,30 @@ export const addContact = (
           resolve(newContact);
         })
         .catch(reject);
+    }
+  });
+};
+
+export const deleteContact = async (
+  userId: string,
+  contact: Contact
+) => {
+  const db = admin.firestore();
+  return new Promise<Contact>(async (resolve, reject) => {
+    try {
+      if (contact.key !== '' && typeof contact.key !== 'undefined') {
+        db.collection('users')
+        .doc(userId)
+        .collection('contacts')
+          .doc(contact.key)
+          .delete()
+          .then(() => resolve(contact))
+          .catch(reject);
+      } else {
+        reject('Contact ID missing');
+      }
+    } catch (err) {
+      reject(err);
     }
   });
 };

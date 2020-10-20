@@ -91,3 +91,70 @@ export const getTagIdsForUser = (
     }
   });
 };
+
+export const addUserTag = (
+  user: admin.auth.DecodedIdToken,
+  tag: UserTag,
+) => {
+  const db = admin.firestore();
+  return new Promise<UserTag>((resolve, reject) => {
+    if (user) {
+      if (tag.key !== '' && typeof tag.key !== 'undefined') {
+        // its an update
+        /*const { key, searchableIndex, ...data } = tag
+        tag.searchableIndex = createIndex(tag.name)*/
+        const {key, ...data} = tag;
+        db.collection('users')
+          .doc(user.uid)
+          .collection('tags')
+          .doc(key)
+          .update(data)
+          .then(() => resolve(tag))
+          .catch(reject);
+      } else {
+        // it's a new record
+        const {key, ...rest} = tag;
+        const newTag = {...rest};
+        db.collection('users')
+          .doc(user.uid)
+          .collection('tags')
+          .add(newTag)
+          .then(
+            (
+              value: FirebaseFirestore.DocumentReference<
+                FirebaseFirestore.DocumentData
+              >
+            ) => {
+              const data = {...newTag, key: value.id};
+              resolve(data as UserTag);
+            }
+          )
+          .catch(reject);
+      }
+    }
+  });
+};
+
+export const deleteUserTag = async (
+  userId: string,
+  tag: UserTag
+) => {
+  const db = admin.firestore();
+  return new Promise<UserTag>(async (resolve, reject) => {
+    try {
+      if (tag.key !== '' && typeof tag.key !== 'undefined') {
+        db.collection('users')
+        .doc(userId)
+        .collection('tags')
+          .doc(tag.key)
+          .delete()
+          .then(() => resolve(tag))
+          .catch(reject);
+      } else {
+        reject('Tag ID missing');
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
