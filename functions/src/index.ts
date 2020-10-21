@@ -171,7 +171,7 @@ app.put('/tags', (req: express.Request, res: express.Response) => {
   } else {
     const IP = req.headers['x-appengine-user-ip'] as string || req.header('x-forwarded-for') || req.connection.remoteAddress;
     addTag(req.user, JSON.parse(req.body), IP)
-    .then(p => res.status(201).send(p.key))
+    .then(p => res.status(201).send(p))
     .catch(err => {
       if (err === 'Unauthorized') {
         res.status(403).send('Unauthorized');
