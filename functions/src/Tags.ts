@@ -48,10 +48,8 @@ export const getTagsByKeyArray = (
   const db = admin.firestore();
   return new Promise<Array<Tag>>((resolve, reject) => {
     if (tagIds.length === 0) {
-      setTimeout(() => {
-        const arr = new Array<Tag>();
-        resolve(arr);
-      }, 1000);
+      const arr = new Array<Tag>();
+      resolve(arr);
     } else {
       db.collection('tags')
         .where(admin.firestore.FieldPath.documentId(), 'in', tagIds)
