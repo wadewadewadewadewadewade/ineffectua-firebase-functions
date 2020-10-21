@@ -62,7 +62,7 @@ app.use(getFirebaseUser);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.put('/:collection((posts|comments|messages))', (req: express.Request<{ collection: string }>, res: express.Response) => {
+app.put('/posts/:collection((posts|comments|messages|tags))', (req: express.Request<{ collection: string }>, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
@@ -80,7 +80,7 @@ app.put('/:collection((posts|comments|messages))', (req: express.Request<{ colle
   }
 });
 
-app.delete('/:collection((posts|comments|messages))', (req: express.Request<{ collection: string }>, res: express.Response) => {
+app.delete('/posts/:collection((posts|comments|messages|tags))', (req: express.Request<{ collection: string }>, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
@@ -99,7 +99,7 @@ app.delete('/:collection((posts|comments|messages))', (req: express.Request<{ co
   }
 });
 
-app.get('/:collection((posts|comments|messages))/:key/:cursor', (req: express.Request<{ collection: string, key: string, cursor: string }>, res: express.Response) => {
+app.get('/posts/:collection((posts|comments|messages|tags))/:key/:cursor', (req: express.Request<{ collection: string, key: string, cursor: string }>, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {
@@ -117,7 +117,7 @@ app.get('/:collection((posts|comments|messages))/:key/:cursor', (req: express.Re
   }
 });
 
-app.get('/:collection((posts|comments|messages))/:cursor', (req: express.Request<{ collection: string, cursor: string }>, res: express.Response) => {
+app.get('/posts/:collection((posts|comments|messages|tags))/:cursor', (req: express.Request<{ collection: string, cursor: string }>, res: express.Response) => {
   if (!req.user) {
     res.status(403).send('Unauthorized');
   } else {

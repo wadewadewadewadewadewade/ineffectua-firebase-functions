@@ -34,11 +34,12 @@ const getPostsByPublic = (db: FirebaseFirestore.Firestore, collection: string, c
 
 export const getPosts = (
   user: admin.auth.DecodedIdToken,
-  collection: string,
+  postType: string,
   cursor: number = 0,
   key?: string
 ): Promise<Array<Post>> => {
   const db = admin.firestore();
+  const collection = postType === 'tags' ? 'posts' : postType;
   if (typeof key !== 'undefined') {
     return db.collection(collection)
     .where('criteria.key.id', '==', key)
@@ -71,11 +72,12 @@ export const getPosts = (
 
 export const addPost = (
   user: admin.auth.DecodedIdToken,
-  collection: string,
+  postType: string,
   post: Post,
   ipAddress?: string
 ) => {
   const db = admin.firestore();
+  const collection = postType === 'tags' ? 'posts' : postType;
   return new Promise<Post>((resolve, reject) => {
     try {
       if (user) {
