@@ -124,10 +124,11 @@ export const addPost = (
 
 export const deletePost = async (
   user: admin.auth.DecodedIdToken,
-  collection: string,
+  postType: string,
   post: Post
 ) => {
   const db = admin.firestore();
+  const collection = postType === 'tags' ? 'posts' : postType;
   return new Promise<Post>(async (resolve, reject) => {
     try {
       if (user) {
