@@ -92,7 +92,7 @@ export const getTagsForUser = (
 
 export const addUserTag = (
   user: admin.auth.DecodedIdToken,
-  tag: UserTag,
+  tag: UserTag
 ) => {
   const db = admin.firestore();
   return new Promise<UserTag>((resolve, reject) => {
