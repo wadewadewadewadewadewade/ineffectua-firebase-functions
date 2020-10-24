@@ -1,6 +1,26 @@
 import * as admin from 'firebase-admin';
 import { convertDocumentDataToTag, Tag } from './Types';
 
+export const getTagByPath = (path: string) => {
+  const db = admin.firestore();
+  return new Promise<Tag>((resolve, reject) => {
+    db.collection('tags')
+      .where('path', '==', path)
+      .orderBy('path')
+      .limit(1)
+      .get()
+      .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {
+        const arr = querySnapshot.docs.map((d) => {
+          const val = convertDocumentDataToTag(d);
+          return val;
+        });
+        const tag = arr[0];
+        resolve(tag);
+      })
+      .catch((err: Error) => reject(err));
+  })
+}
+
 export const getTagsForAutocomplete = (
   prefix: string,
   tagIdsInUse: Array<string>,

@@ -6,7 +6,7 @@ import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as bodyParser from "body-parser";
 import {getPosts, addPost, deletePost } from './Posts';
-import {getTagsByKeyArray, getTagsForAutocomplete, addTag} from './Tags';
+import {getTagsByKeyArray, getTagsForAutocomplete, addTag, getTagByPath} from './Tags';
 import {addUser, addUserTag, deleteUserTag, getTagsForUser, getUserById} from './Users';
 import {addCalendarEntry, deleteCalendarEntry, getCalendar} from './Calendar';
 import {getDataTypes, addDataType, deleteDataType} from './DataTypes';
@@ -137,32 +137,58 @@ app.get('/posts/:collection((posts|comments|messages|tags))/:cursor', (req: expr
 
 app.get('/tags/:prefix/:keysjson', (req: express.Request<{ prefix: string, keysjson: string }>, res: express.Response) => {
   const {prefix, keysjson} = req.params;
-  const keys: Array<string> = JSON.parse(keysjson);
-  getTagsForAutocomplete(prefix, keys)
-  .then(p => res.status(200).json(p))
-  .catch(err => {
-    if (err === 'Unauthorized') {
-      res.status(403).send('Unauthorized');
-    } else {
-      console.error(err);
-      res.status(500).send(err);
-    }
-  });
+  if (prefix === '-') {
+    getTagByPath(keysjson)
+    .then(p => res.status(200).json(p.key))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  } else {
+    const keys: Array<string> = JSON.parse(keysjson);
+    getTagsForAutocomplete(prefix, keys)
+    .then(p => res.status(200).json(p))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
 });
 
 app.get('/tags/:keysjson', (req: express.Request<{ keysjson: string }>, res: express.Response) => {
   const {keysjson} = req.params;
-  const keys: Array<string> = JSON.parse(keysjson);
-  getTagsByKeyArray(keys)
-  .then(p => res.status(200).json(p))
-  .catch(err => {
-    if (err === 'Unauthorized') {
-      res.status(403).send('Unauthorized');
-    } else {
-      console.error(err);
-      res.status(500).send(err);
-    }
-  });
+  if (typeof JSON.parse(keysjson) === 'string') {
+    getTagByPath(keysjson)
+    .then(p => res.status(200).json(p))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  } else {
+    const keys: Array<string> = JSON.parse(keysjson);
+    getTagsByKeyArray(keys)
+    .then(p => res.status(200).json(p))
+    .catch(err => {
+      if (err === 'Unauthorized') {
+        res.status(403).send('Unauthorized');
+      } else {
+        console.error(err);
+        res.status(500).send(err);
+      }
+    });
+  }
 });
 
 app.put('/tags', (req: express.Request, res: express.Response) => {
