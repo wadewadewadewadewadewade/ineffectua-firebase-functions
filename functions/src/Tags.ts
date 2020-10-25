@@ -6,7 +6,6 @@ export const getTagByPath = (path: string) => {
   return new Promise<Tag>((resolve, reject) => {
     db.collection('tags')
       .where('path', '==', path)
-      .orderBy('path')
       .limit(1)
       .get()
       .then((querySnapshot: FirebaseFirestore.QuerySnapshot) => {

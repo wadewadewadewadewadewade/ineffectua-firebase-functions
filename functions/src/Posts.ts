@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { getTagByPath } from './Tags';
 import { convertDocumentDataToPost, PostPrivacyTypes, Post } from './Types';
 
 export const postsPageSize = 50
@@ -32,7 +33,7 @@ const getPostsByPublic = (db: FirebaseFirestore.Firestore, collection: string, c
   )
 }
 
-export const getPosts = (
+export const getPosts = async (
   user: admin.auth.DecodedIdToken,
   postType: string,
   cursor: number = 0,
@@ -41,8 +42,17 @@ export const getPosts = (
   const db = admin.firestore();
   const collection = postType === 'tags' ? 'posts' : postType;
   if (typeof key !== 'undefined') {
-    return db.collection(collection)
-    .where('criteria.key.id', '==', key)
+    let keyId = key;
+    if (postType === 'tags') {
+      const tag = await getTagByPath(key);
+      if (tag === undefined || tag.key === undefined) {
+        throw new Error('Tag path not found')
+      } else {
+        keyId = tag.key;
+      }
+    }
+    return await db.collection(collection)
+    .where('criteria.key.id', '==', keyId)
     .orderBy('created.on', 'desc')
     .offset(postsPageSize * cursor)
     .limit(postsPageSize * (cursor + 1))
@@ -51,7 +61,7 @@ export const getPosts = (
       querySnapshot.docs.map(p => convertDocumentDataToPost(p))
     )
   } else {
-    return Promise.all<Array<Post>>([
+    return await Promise.all<Array<Post>>([
       getPostsByUser(db, user, collection, cursor),
       getPostsByPublic(db, collection, cursor)
     ]).then((postsCollection: Array<Array<Post>>) => {
